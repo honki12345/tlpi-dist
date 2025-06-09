@@ -27,12 +27,16 @@ static char buf[MAX_ERROR_LEN];     /* Statically allocated return buffer */
 char *
 strerror(int err)
 {
-    if (err < 0 || err >= _sys_nerr || _sys_errlist[err] == NULL) {
+    if (err < 0) {
         snprintf(buf, MAX_ERROR_LEN, "Unknown error %d", err);
     } else {
-        strncpy(buf, _sys_errlist[err], MAX_ERROR_LEN - 1);
-        buf[MAX_ERROR_LEN - 1] = '\0';          /* Ensure null termination */
+        /* Use the system's strerror function to get the error message */
+        char *sys_msg = strerror_r(err, buf, MAX_ERROR_LEN);
+        if (sys_msg != buf) {
+            /* strerror_r returned a pointer to a static string */
+            strncpy(buf, sys_msg, MAX_ERROR_LEN - 1);
+            buf[MAX_ERROR_LEN - 1] = '\0';
+        }
     }
-
     return buf;
 }

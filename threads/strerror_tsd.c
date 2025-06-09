@@ -29,7 +29,6 @@ static pthread_key_t strerrorKey;
 
 #define MAX_ERROR_LEN 256           /* Maximum length of string in per-thread
                                        buffer returned by strerror() */
-
 static void                         /* Free thread-specific data buffer */
 destructor(void *buf)
 {
@@ -73,11 +72,18 @@ strerror(int err)
             errExitEN(s, "pthread_setspecific");
     }
 
-    if (err < 0 || err >= _sys_nerr || _sys_errlist[err] == NULL) {
+    /* 수정된 부분: _sys_nerr과 _sys_errlist 대신 표준 함수 사용 */
+    if (err < 0 || err > 200) {  /* 대략적인 최대 에러 번호 */
         snprintf(buf, MAX_ERROR_LEN, "Unknown error %d", err);
     } else {
-        strncpy(buf, _sys_errlist[err], MAX_ERROR_LEN - 1);
-        buf[MAX_ERROR_LEN - 1] = '\0';          /* Ensure null termination */
+        /* 시스템의 표준 strerror 함수 사용 */
+        const char *msg = strerror(err);
+        if (msg != NULL) {
+            strncpy(buf, msg, MAX_ERROR_LEN - 1);
+            buf[MAX_ERROR_LEN - 1] = '\0';          /* Ensure null termination */
+        } else {
+            snprintf(buf, MAX_ERROR_LEN, "Unknown error %d", err);
+        }
     }
 
     return buf;
